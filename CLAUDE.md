@@ -168,8 +168,9 @@ keeps the mechanism dead simple and easy to debug.
    named volumes, env_file). Per-project bits (container name, Traefik
    labels, networks, db service) live in the project's compose.
    `compose.example.yml` at this repo root is a starter template that
-   users copy on first setup. Requires Compose v2.24+ for the
-   `project_directory:` parameter in `include:`.
+   users copy on first setup. Requires **Compose v5.1+**: the project compose
+   redefines the `wp` service it `include:`s, which Compose only merges from
+   v5.1+ (v2.x → "services.wp conflicts with imported resource").
 
 4. **GitHub anonymous API rate limit: 60 req/h.** `wpbase` uses curl against
    `api.github.com`. Fine for normal use. For high-volume update orchestration,
@@ -253,7 +254,8 @@ docker run --rm wp-test ls /opt/overrides/configs/php.ini.d/
 - [x] nginx server-level override mechanism — `overrides/configs/server.d/`
       included at the end of the `server {}` block (see gotcha #1 for the
       residual limit on redefining existing directives)
-- [x] `compose.base.yml` + per-project `include:` (Compose v2.24+)
+- [x] `compose.base.yml` + per-project `include:` (Compose v5.1+ — the project
+      compose redefines the imported `wp` service; v2.x rejects that)
 - [x] `.env.example` and `.env.wordpress.example` templates
 - [x] Per-script documentation in `SCRIPTS.md`
 - [x] CHANGELOG versioning policy and upgrade procedure

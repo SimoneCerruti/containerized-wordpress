@@ -102,8 +102,11 @@ The MySQL credentials live ONLY in `.env`. Compose interpolates
 `${MYSQL_*}` references inside `.env.wordpress` before handing it to
 the container, so WP and the db service always agree.
 
-`include:` requires Docker Compose v2.24+ (for the `project_directory:`
-parameter used to resolve build paths from the project root).
+Requires **Docker Compose v5.1+**: the project's `docker-compose.yml`
+`include:`s `base/compose.base.yml` and redefines the `wp` service to add
+labels/networks — Compose only merges an overridden imported service from
+v5.1+ (v2.x errors with `services.wp conflicts with imported resource`).
+Install it on the host with `apt-get install docker-compose-plugin`.
 
 For details on what each bundled script does and the env vars it
 consumes, see [SCRIPTS.md](SCRIPTS.md).

@@ -16,8 +16,10 @@
 # Dockerfile location) resolve from the project root rather than from
 # `base/`.
 #
-# Requires Compose v2.24+ for the `include:` directive with
-# `project_directory:`.
+# Requires Docker Compose v5.1+. The project's docker-compose.yml `include:`s
+# this file AND redefines the `wp` service to add per-project labels/networks;
+# Compose only merges an overridden imported service from v5.1+ (v2.x errors
+# with "services.wp conflicts with imported resource").
 #
 # This file defines the standard WP service shape (build, healthcheck,
 # named volumes, env_file). Projects layer on top:

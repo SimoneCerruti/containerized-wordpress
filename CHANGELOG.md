@@ -87,7 +87,7 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
-## [Unreleased]
+## [1.0.2] - 2026-05-26
 
 ### Changed
 - `.env.wordpress.example`: add an explicit `WORDPRESS_DEBUG=0` (the image's
@@ -98,6 +98,15 @@ Move entries to a versioned section when cutting the release.
 - `wp-malware-scan.sh`: the scan report email is now **English** (was Italian).
   Project convention is now English everywhere, including user-facing output
   (CLAUDE.md updated). Affects the baked-in script, so it ships in the image.
+
+### Fixed
+- **Corrected the Docker Compose minimum to v5.1+** (docs said v2.24+). The
+  project's `docker-compose.yml` redefines the `wp` service it imports via
+  `include:`; Compose only merges an overridden imported service from v5.1+ —
+  v2.x (verified on v2.39.2) errors with `services.wp conflicts with imported
+  resource`. `wpbase`'s `require_compose_version` preflight bumped to v5.1
+  accordingly (separate repo). Install on hosts with
+  `apt-get install docker-compose-plugin`.
 
 ## [1.0.1] - 2026-05-26
 
