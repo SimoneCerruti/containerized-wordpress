@@ -35,7 +35,7 @@ fi
 /usr/local/bin/cloudflare-ips.sh || echo "Could not refresh Cloudflare IPs at startup"
 
 # ---- Export env vars for cron ----
-printenv | grep -E '^(WP_PATH|MALWARE_NOTIFY_EMAIL|SCAN_PATH_EXCLUDES|WORDPRESS_)' > /etc/cron.d/container-env
+printenv | grep -E '^(WP_PATH|MALWARE_SCAN_|WORDPRESS_)' > /etc/cron.d/container-env
 chmod 640 /etc/cron.d/container-env
 chown root:www-data /etc/cron.d/container-env
 

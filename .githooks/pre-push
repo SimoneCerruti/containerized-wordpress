@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# pre-push hook: enforce that any pushed `vX.Y.Z` tag matches the VERSION
+# file at that tag's commit — the same check release.yml runs in CI, but
+# caught locally before the push instead of failing the Release workflow.
+#
+# Enable once per clone:
+#   git config core.hooksPath .githooks
+#
+# stdin format (one line per ref being pushed):
+#   <local ref> <local sha1> <remote ref> <remote sha1>
+set -uo pipefail
+
+fail=0
+while read -r local_ref _local_sha _remote_ref _remote_sha; do
+    case "$local_ref" in
+        refs/tags/v[0-9]*)
+            tag="${local_ref#refs/tags/v}"
+            # Read VERSION as it exists at the tagged commit (works for both
+            # lightweight and annotated tags).
+            file_ver="$(git show "${local_ref}:VERSION" 2>/dev/null | tr -d '[:space:]')"
+            if [[ -z "$file_ver" ]]; then
+                echo "pre-push: tag ${local_ref#refs/tags/} has no readable VERSION file" >&2
+                fail=1
+            elif [[ "$tag" != "$file_ver" ]]; then
+                echo "pre-push: tag v${tag} does not match VERSION (${file_ver}) at that commit" >&2
+                fail=1
+            fi
+            ;;
+    esac
+done
+
+if (( fail )); then
+    echo "pre-push: aborting. Fix VERSION or the tag, then push again." >&2
+    exit 1
+fi
+exit 0

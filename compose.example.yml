@@ -1,0 +1,71 @@
+# compose.example.yml — reference per-project docker-compose.yml
+#
+# This file is NOT shipped into project `base/` directories. It's a starter
+# template: copy it to your project root as `docker-compose.yml` on first
+# setup and customize the parts marked CHANGE-ME.
+#
+# What this file does:
+#   - `include:`s the versioned compose.base.yml from base/ so the service
+#     shape (build args, healthcheck, named volumes) stays in sync with the
+#     pinned base version.
+#   - Adds per-project bits: Traefik labels, network, and a sample MariaDB
+#     service that reads its credentials from the project's .env via
+#     Compose interpolation.
+#
+# Env files (see .env.example, .env.wordpress.example):
+#   - .env           — compose-level vars (project name, domain, MySQL
+#                       creds). Auto-loaded by Compose for ${VAR} interpolation
+#                       across the compose file and the .env.wordpress file.
+#   - .env.wordpress — runtime env for the wp container.
+
+include:
+  - path: base/compose.base.yml
+    project_directory: .
+
+services:
+  wp:
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - traefik
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # CHANGE-ME: cert resolver name must match your Traefik setup.
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${WP_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80"
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  db_data:
+
+networks:
+  # External Traefik network — must exist on the host before `docker compose up`.
+  # Create with:  docker network create traefik
+  traefik:
+    external: true
+    name: traefik
+  default:

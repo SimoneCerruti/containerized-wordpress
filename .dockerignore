@@ -1,0 +1,33 @@
+# .dockerignore — keep the (standalone) build context to what the image needs.
+#
+# Dockerfile.base only COPYs: configs/, scripts/, overrides/.
+# Everything below is documentation, tooling, or per-project scaffolding that
+# must NOT bloat the build context or leak into the image.
+
+# Other docs (human-facing, never baked into the image):
+README.md
+CLAUDE.md
+SCRIPTS.md
+CHANGELOG.md
+
+# Templates / scaffolding consumed at the project level, not by the build:
+compose.base.yml
+compose.example.yml
+.env.example
+.env.wordpress.example
+VERSION
+
+# VCS, CI, and local dev tooling:
+.git
+.gitignore
+.github
+.githooks
+
+# Editor / OS / local artifacts:
+.idea
+.vscode
+.DS_Store
+*.swp
+*.swo
+*.log
+.cache

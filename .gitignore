@@ -8,3 +8,9 @@
 # Local test artifacts
 .cache/
 *.log
+
+# Files that exist ONLY to communicate with wpbase-cli
+REPO-MAP.md
+WPBASE-CLI-CHANGES.md
+
+.claude

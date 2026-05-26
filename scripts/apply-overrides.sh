@@ -6,7 +6,8 @@
 # Dockerfile (or via volume in dev mode).
 #
 # Layout:
-#   /opt/overrides/configs/nginx.d/*.conf      -> /etc/nginx/conf.d/
+#   /opt/overrides/configs/nginx.d/*.conf      -> /etc/nginx/conf.d/   (http {} scope)
+#   /opt/overrides/configs/server.d/*.conf     -> /etc/nginx/server.d/ (server {} scope)
 #   /opt/overrides/configs/php.ini.d/*.ini     -> /usr/local/etc/php/conf.d/
 #   /opt/overrides/configs/crontab.d/*         -> /etc/cron.d/
 #   /opt/overrides/configs/supervisor.d/*.conf -> /etc/supervisor/conf.d/
@@ -41,10 +42,12 @@ copy_dropin() {
     done
 }
 
-# nginx snippets - included via /etc/nginx/conf.d/*.conf
-# NOTE: site-specific server-level rules must use a different mechanism;
-# these conf.d files are loaded at http {} level.
+# nginx snippets at http {} level - included via /etc/nginx/conf.d/*.conf
 copy_dropin "$OVR/configs/nginx.d"     "/etc/nginx/conf.d"            "*.conf"
+
+# nginx snippets at server {} level - included at the END of the server block
+# (see configs/nginx.conf). For ADDING locations / server-level directives.
+copy_dropin "$OVR/configs/server.d"    "/etc/nginx/server.d"         "*.conf"
 
 # php.ini drop-ins (highest number wins, processed alphabetically)
 copy_dropin "$OVR/configs/php.ini.d"   "/usr/local/etc/php/conf.d"    "*.ini"
