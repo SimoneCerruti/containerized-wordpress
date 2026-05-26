@@ -33,12 +33,43 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik"
-      # CHANGE-ME: cert resolver name must match your Traefik setup.
+      # non-www (main)
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${WP_DOMAIN}`)"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare"
       - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80"
+      # www (redirect)
+      - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.rule=Host(`www.${WP_DOMAIN}`)"
+      - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.tls=true"
+      - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare"
+      # explicit service: redirect-only routers still must bind to a service;
+      # works without it (single service → default) but explicit is more robust.
+      - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.service=${COMPOSE_PROJECT_NAME}"
+      - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.middlewares=redirect_to_non_www_${COMPOSE_PROJECT_NAME}"
+      # redirect www -> non-www
+      - "traefik.http.middlewares.redirect_to_non_www_${COMPOSE_PROJECT_NAME}.redirectregex.regex=^https://www\\.${WP_DOMAIN}(.*)"
+      - "traefik.http.middlewares.redirect_to_non_www_${COMPOSE_PROJECT_NAME}.redirectregex.replacement=https://${WP_DOMAIN}$${1}"
+      - "traefik.http.middlewares.redirect_to_non_www_${COMPOSE_PROJECT_NAME}.redirectregex.permanent=true"
+      # If you want to redirect non www to www, remove what's above and use the block below
+      # www
+      # - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.rule=Host(`www.${WP_DOMAIN}`)"
+      # - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+      # - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.tls=true"
+      # - "traefik.http.routers.www_${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare"
+      # - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80"
+      # non-www
+      # - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${WP_DOMAIN}`)"
+      # - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+      # - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls=true"
+      # - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=cloudflare"
+      # - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.service=${COMPOSE_PROJECT_NAME}"
+      # - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=redirect_to_www_${COMPOSE_PROJECT_NAME}"
+      # redirect non-www to www
+      # - "traefik.http.middlewares.redirect_to_www_${COMPOSE_PROJECT_NAME}.redirectregex.regex=^https://${WP_DOMAIN}(.*)"
+      # - "traefik.http.middlewares.redirect_to_www_${COMPOSE_PROJECT_NAME}.redirectregex.replacement=https://www.${WP_DOMAIN}$${1}"
+      # - "traefik.http.middlewares.redirect_to_www_${COMPOSE_PROJECT_NAME}.redirectregex.permanent=true"
 
   db:
     image: mariadb:11
@@ -50,6 +81,8 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
+    ports:
+      - "127.0.0.1:${DB_FORWARD_PORT:-3306}:3306"
     networks:
       - default
     healthcheck:
@@ -64,8 +97,9 @@ volumes:
 
 networks:
   # External Traefik network — must exist on the host before `docker compose up`.
-  # Create with:  docker network create traefik
+  # Create with: docker network create traefik
   traefik:
     external: true
     name: traefik
   default:
+    driver: bridge

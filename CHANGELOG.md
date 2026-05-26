@@ -87,6 +87,25 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
+## [1.0.1] - 2026-05-26
+
+Template-only changes (PATCH). These touch the starter files scaffolded into
+the project root on `wpbase install` — `base/` and the image are unchanged.
+Existing projects keep their own `docker-compose.yml`/`.env*`; only **new**
+installs pick these up.
+
+### Changed
+- `compose.example.yml`: default `certresolver` → `cloudflare`; added a
+  `www → non-www` redirect router + middleware (with a commented
+  `non-www → www` alternative); publish the `db` port on the host loopback
+  (`127.0.0.1:${DB_FORWARD_PORT}:3306`); explicit `.service` on the redirect
+  router; explicit `driver: bridge` on the `default` network.
+- `.env.example`: renamed `DB_PORT` → `DB_FORWARD_PORT` with a comment — it is
+  the host-side published port only (loopback), unrelated to the in-container
+  `db:3306` connection; vary it when one host runs several MariaDB containers.
+- `.env.wordpress.example`: `WORDPRESS_DB_HOST` hardcoded to `db:3306`,
+  decoupling the WP→db connection from the host-forward port.
+
 ## [1.0.0] - Initial release
 
 ### Image & stack
