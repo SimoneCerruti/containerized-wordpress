@@ -1,12 +1,12 @@
-# dockerized-wordpress architecture
+# containerized-wordpress architecture
 
 ## Repos
 
-### `dockerized-wordpress` (this repo, published on GitHub)
+### `containerized-wordpress` (this repo, published on GitHub)
 The reusable, versioned base. Releases are tagged (e.g. `v1.0.0`).
 
 ```
-dockerized-wordpress/
+containerized-wordpress/
 ├── VERSION                  # 1.0.0
 ├── Dockerfile.base          # builds the WP+nginx+php-fpm+cron image
 ├── configs/                 # default configs (nginx, php, supervisor, cron, ...)
@@ -21,7 +21,7 @@ my-project/
 ├── docker-compose.yml       # uses base/Dockerfile.base as Dockerfile
 ├── .env                     # secrets (NOT committed)
 ├── .env.wordpress           # secrets (NOT committed)
-├── base/                    # SNAPSHOT of dockerized-wordpress v{X.Y.Z}
+├── base/                    # SNAPSHOT of containerized-wordpress v{X.Y.Z}
 │   ├── Dockerfile.base
 │   ├── configs/
 │   ├── scripts/

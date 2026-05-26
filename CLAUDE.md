@@ -1,10 +1,10 @@
-# CLAUDE.md — dockerized-wordpress
+# CLAUDE.md — containerized-wordpress
 
-This file gives Claude Code the context to work on the `dockerized-wordpress` repository.
+This file gives Claude Code the context to work on the `containerized-wordpress` repository.
 
 ## Repository purpose
 
-`dockerized-wordpress` is a **reusable, versioned Docker base** for WordPress sites.
+`containerized-wordpress` is a **reusable, versioned Docker base** for WordPress sites.
 It encodes a hardened WordPress + Nginx + PHP-FPM + cron + supervisor stack,
 tuned for production deployments behind Traefik on Hetzner VPS hosts.
 
@@ -15,13 +15,13 @@ hand**, only swapped wholesale when the version is bumped.
 
 ## Architecture (3 components)
 
-### 1. This repo (`dockerized-wordpress`)
+### 1. This repo (`containerized-wordpress`)
 The reusable base, published on GitHub. Each release is a Git tag (`vX.Y.Z`)
 which GitHub auto-generates as a downloadable tarball. The `release.yml`
 workflow creates the GitHub Release on tag push.
 
 ```
-dockerized-wordpress/
+containerized-wordpress/
 ├── VERSION                  # single line, MUST match the git tag (without 'v')
 ├── Dockerfile.base          # builds the image, uses BUILD_ROOT arg
 ├── configs/                 # default configs baked into the image
@@ -55,7 +55,7 @@ my-project/
 ├── .base-version            # pinned base version
 ├── docker-compose.yml       # uses base/Dockerfile.base with BUILD_ROOT=base
 ├── .env / .env.wordpress    # secrets, not committed
-├── base/                    # ⭐ snapshot of dockerized-wordpress @ pinned version
+├── base/                    # ⭐ snapshot of containerized-wordpress @ pinned version
 │   ├── Dockerfile.base      # copied verbatim from the release tarball
 │   ├── configs/
 │   ├── scripts/
@@ -214,7 +214,7 @@ To test from a project layout:
 ```bash
 mkdir /tmp/test-project && cd /tmp/test-project
 mkdir -p base overrides/configs/php.ini.d
-cp -r ~/dockerized-wordpress/{configs,scripts,Dockerfile.base,VERSION,overrides} base/
+cp -r ~/containerized-wordpress/{configs,scripts,Dockerfile.base,VERSION,overrides} base/
 echo "memory_limit = 1G" > overrides/configs/php.ini.d/10-test.ini
 docker build -f base/Dockerfile.base --build-arg BUILD_ROOT=base -t wp-test .
 docker run --rm wp-test ls /opt/overrides/configs/php.ini.d/
