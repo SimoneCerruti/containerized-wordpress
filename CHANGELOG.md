@@ -87,6 +87,15 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
+## [Unreleased]
+
+### Changed
+- `.env.wordpress.example`: add an explicit `WORDPRESS_DEBUG=0` (the image's
+  master switch for `WP_DEBUG`) and correct the surrounding comment — the
+  existing `WP_DEBUG_LOG` / `WP_DEBUG_DISPLAY` lines only take effect when
+  `WORDPRESS_DEBUG=1`. No runtime change (debug was already off by default);
+  flip to `1` for silent error logging to `wp-content/debug.log`. Template-only.
+
 ## [1.0.1] - 2026-05-26
 
 Template-only changes (PATCH). These touch the starter files scaffolded into
