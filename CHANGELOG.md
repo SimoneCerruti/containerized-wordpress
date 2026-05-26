@@ -95,6 +95,9 @@ Move entries to a versioned section when cutting the release.
   existing `WP_DEBUG_LOG` / `WP_DEBUG_DISPLAY` lines only take effect when
   `WORDPRESS_DEBUG=1`. No runtime change (debug was already off by default);
   flip to `1` for silent error logging to `wp-content/debug.log`. Template-only.
+- `wp-malware-scan.sh`: the scan report email is now **English** (was Italian).
+  Project convention is now English everywhere, including user-facing output
+  (CLAUDE.md updated). Affects the baked-in script, so it ships in the image.
 
 ## [1.0.1] - 2026-05-26
 

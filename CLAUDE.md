@@ -219,10 +219,10 @@ GitHub Actions (`.github/workflows/release.yml`) will:
 - **Bash scripts**: `set -uo pipefail` at top (or `-Eeuo pipefail` where strict
   needed). Log to `/var/log/wp_app/*.log` from within containers. Use
   `[$(date -Iseconds)]` prefix on log lines.
-- **English** for all code, comments, identifiers, commit messages, docs.
-- **Italian** only for end-user-facing strings (error messages shown to site
-  visitors / admins). The malware scan report is in Italian for this reason
-  — see `wp-malware-scan.sh`.
+- **English everywhere — no exceptions.** Code, comments, identifiers, commit
+  messages, docs, AND all runtime/user-facing output (log lines, the malware
+  scan report email, any admin-facing strings). The malware scan report was
+  previously Italian; it is now English like everything else.
 - **No new dependencies on the host.** The whole `wpbase` CLI is bash + curl
   + tar. Do not add Python, jq, or anything else without explicit approval.
 - **Drop-in dirs over file overwrites.** When adding customization points,
