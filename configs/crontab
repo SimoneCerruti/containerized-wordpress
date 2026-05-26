@@ -1,0 +1,17 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Standard Debian periodic jobs
+17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+47 6    * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+
+# Refresh Cloudflare IP ranges weekly (Sunday 4am)
+0 4 * * 0 root /usr/local/bin/cloudflare-ips.sh >> /var/log/wp_app/cloudflare-ips.log 2>&1
+
+# Heartbeat - last cron run timestamp (lightweight, rotates with logrotate)
+*/15 * * * * root date -Iseconds > /var/log/wp_app/cron-heartbeat.log 2>&1
+
+# Per-project cron jobs (wp-cron, malware-scan, custom) are loaded from
+# /etc/cron.d/* via apply-overrides.sh — see overrides/configs/crontab.d/

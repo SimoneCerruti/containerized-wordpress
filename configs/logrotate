@@ -1,0 +1,9 @@
+/var/log/wp_app/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    notifempty
+    copytruncate
+    su www-data www-data
+}

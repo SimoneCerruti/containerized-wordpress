@@ -1,0 +1,95 @@
+#syntax=docker/dockerfile:1.6
+# Base Dockerfile for dockerized-wordpress.
+#
+# Used in two contexts:
+# 1. Standalone (testing the base):
+#    docker build -f Dockerfile.base -t wp-base:test .
+#    -> reads from ./configs and ./scripts (this repo's root)
+#
+# 2. From a project (production):
+#    The project extracts this repo into ./base/ and runs:
+#    docker build -f base/Dockerfile.base --build-arg BUILD_ROOT=base .
+#    -> reads from ./base/configs and ./base/scripts
+#    -> also COPIes ./overrides/ from the project root
+#
+# BUILD_ROOT defaults to "." so standalone usage works.
+
+ARG BUILD_ROOT=.
+
+FROM wordpress:7-php8.5-fpm
+ARG BUILD_ROOT
+
+# ---- system packages ----
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    nano curl libfcgi-bin mariadb-client nginx supervisor \
+    cron unzip bash logrotate rsync && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# ---- WP CLI ----
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
+    chmod +x wp-cli.phar && \
+    mv wp-cli.phar /usr/local/bin/wp
+
+# ---- base configs (defaults) ----
+COPY ${BUILD_ROOT}/configs/nginx.conf                   /etc/nginx/sites-available/default
+COPY ${BUILD_ROOT}/configs/php-fpm-www.conf             /usr/local/etc/php-fpm.d/www.conf
+COPY ${BUILD_ROOT}/configs/php.ini                      /usr/local/etc/php/php.ini
+COPY ${BUILD_ROOT}/configs/supervisord.conf             /etc/supervisor/supervisord.conf
+COPY ${BUILD_ROOT}/configs/crontab                      /etc/crontab
+COPY ${BUILD_ROOT}/configs/cron-supervisor.conf         /etc/supervisor/conf.d/cron.conf
+COPY ${BUILD_ROOT}/configs/nginx-supervisor.conf        /etc/supervisor/conf.d/nginx.conf
+COPY ${BUILD_ROOT}/configs/php-fpm-supervisor.conf      /etc/supervisor/conf.d/php-fpm.conf
+COPY ${BUILD_ROOT}/configs/logrotate                    /etc/logrotate.d/wp_app
+COPY ${BUILD_ROOT}/configs/wp-malware-scan-excludes.txt /etc/wp-malware-scan/path-excludes.txt
+
+RUN chmod 0644 /etc/crontab && \
+    mkdir -p /etc/nginx/conf.d \
+             /etc/cron.d \
+             /usr/local/etc/php/conf.d \
+             /etc/supervisor/conf.d \
+             /var/log/wp_app \
+             /var/lib/wp-malware-scan \
+             /opt/overrides && \
+    chown www-data:www-data /var/lib/wp-malware-scan && \
+    chown -R www-data:www-data /var/log/wp_app
+
+# ---- base scripts ----
+COPY ${BUILD_ROOT}/scripts/wp-cron.sh            /usr/local/bin/wp-cron.sh
+COPY ${BUILD_ROOT}/scripts/healthcheck.sh        /healthcheck.sh
+COPY ${BUILD_ROOT}/scripts/cloudflare-ips.sh     /usr/local/bin/cloudflare-ips.sh
+COPY ${BUILD_ROOT}/scripts/wp-malware-scan.sh    /usr/local/bin/wp-malware-scan.sh
+COPY ${BUILD_ROOT}/scripts/entrypoint.sh         /entrypoint.sh
+COPY ${BUILD_ROOT}/scripts/apply-overrides.sh    /usr/local/bin/apply-overrides.sh
+
+RUN chmod +x /usr/local/bin/wp-cron.sh \
+             /healthcheck.sh \
+             /usr/local/bin/cloudflare-ips.sh \
+             /usr/local/bin/wp-malware-scan.sh \
+             /entrypoint.sh \
+             /usr/local/bin/apply-overrides.sh
+
+# ---- bootstrap Cloudflare IPs (best-effort) ----
+RUN /usr/local/bin/cloudflare-ips.sh || \
+    echo "# Bootstrap fallback - will be populated on first cron run" > /etc/nginx/conf.d/cloudflare-ips.conf
+
+WORKDIR /var/www/html
+
+RUN usermod -s /bin/bash www-data && \
+    echo "export TERM=xterm-256color" >> /etc/bash.bashrc && \
+    echo "alias ls='ls --color=auto'" >> /etc/bash.bashrc && \
+    echo "alias grep='grep --color=auto'" >> /etc/bash.bashrc && \
+    echo "PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '" >> /etc/bash.bashrc
+
+RUN chown -R www-data:www-data /var/www/html
+
+# ---- Bake project overrides into the image ----
+# When built from a project, ./overrides/ exists at build context root and
+# gets baked into /opt/overrides. When built standalone, the base repo's
+# overrides/.gitkeep file ensures this COPY succeeds.
+COPY overrides /opt/overrides
+RUN if [ -d /opt/overrides/scripts ]; then \
+        find /opt/overrides/scripts -name '*.sh' -exec chmod +x {} \; ; \
+    fi
+
+CMD ["/entrypoint.sh"]
