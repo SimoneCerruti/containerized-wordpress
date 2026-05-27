@@ -87,6 +87,17 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
+## [1.0.3] - 2026-05-27
+
+### Fixed
+- `entrypoint.sh`: the cron env snapshot written to `/etc/cron.d/container-env`
+  now emits each value with `printf %q` (and `export`) instead of a raw
+  `printenv | grep` dump of `KEY=VAL`. The old form broke `source`-ing the file
+  whenever a value contained spaces, `$`, quotes, backticks or other shell
+  metacharacters (and could even execute embedded commands); cron jobs that
+  source it — e.g. for `WORDPRESS_DB_PASSWORD` — now get the values intact.
+  Affects the baked-in script, so it ships in the image.
+
 ## [1.0.2] - 2026-05-26
 
 ### Changed

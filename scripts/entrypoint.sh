@@ -35,7 +35,21 @@ fi
 /usr/local/bin/cloudflare-ips.sh || echo "Could not refresh Cloudflare IPs at startup"
 
 # ---- Export env vars for cron ----
-printenv | grep -E '^(WP_PATH|MALWARE_SCAN_|WORDPRESS_)' > /etc/cron.d/container-env
+# Snapshot a curated set of env vars to a file the cron jobs source (cron runs
+# jobs with a stripped environment). Each value is emitted with `printf %q`, so
+# the line is always safe to `source` under bash even when the value contains
+# spaces, $, quotes, backticks or other shell metacharacters — a raw `KEY=VAL`
+# dump would break sourcing (or worse, allow injection). `export` so the values
+# propagate to the scripts those cron jobs invoke.
+{
+    while IFS='=' read -r name value; do
+        case "$name" in
+            WP_PATH*|MALWARE_SCAN_*|WORDPRESS_*)
+                printf 'export %s=%q\n' "$name" "$value"
+                ;;
+        esac
+    done < <(printenv)
+} > /etc/cron.d/container-env
 chmod 640 /etc/cron.d/container-env
 chown root:www-data /etc/cron.d/container-env
 
