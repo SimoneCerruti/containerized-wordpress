@@ -233,6 +233,19 @@ GitHub Actions (`.github/workflows/release.yml`) will:
 - **Drop-in dirs over file overwrites.** When adding customization points,
   always prefer adding a new drop-in directory and a new mapping in
   `apply-overrides.sh` over allowing files to overwrite base configs.
+- **Commit messages MUST follow [Conventional Commits v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)**
+  — always, no exceptions. Subject line is `<type>[optional scope][!]: <description>`
+  in lowercase imperative; optional body separated by a blank line; optional footers
+  (e.g. `BREAKING CHANGE:`) at the bottom. The `!` after type/scope (and/or a
+  `BREAKING CHANGE:` footer) marks any change that breaks the consumer contract —
+  drop-in dir renames, env-var removals/renames, base-image script behavior changes
+  that affect plugins, `compose.base.yml` schema changes, etc. Allowed types:
+  `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`,
+  `revert`. Common scopes in this repo: `crontab`, `entrypoint`, `cloudflare-ips`,
+  `wp-cron`, `wp-malware-scan`, `nginx`, `compose`, `image`, `docs`, `release`.
+  Examples: `feat(crontab): ship wp-cron in the base crontab`,
+  `fix(entrypoint): skip WORDPRESS_CONFIG_EXTRA in the cron env snapshot`,
+  `refactor(wp-cron)!: switch HTTP loopback to WP-CLI`.
 
 ## Testing locally
 
