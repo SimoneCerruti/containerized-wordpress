@@ -42,13 +42,14 @@ fi
 # dump would break sourcing (or worse, allow injection). `export` so the values
 # propagate to the scripts those cron jobs invoke.
 {
-    while IFS='=' read -r name value; do
+    for name in $(compgen -v); do
         case "$name" in
-            WP_PATH*|MALWARE_SCAN_*|WORDPRESS_*)
-                printf 'export %s=%q\n' "$name" "$value"
+            WORDPRESS_CONFIG_EXTRA) continue ;;
+            WP_PATH|MALWARE_SCAN_*|WORDPRESS_*)
+                printf 'export %s=%q\n' "$name" "${!name}"
                 ;;
         esac
-    done < <(printenv)
+    done
 } > /etc/cron.d/container-env
 chmod 640 /etc/cron.d/container-env
 chown root:www-data /etc/cron.d/container-env
