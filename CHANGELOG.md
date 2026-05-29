@@ -87,6 +87,23 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
+## [Unreleased]
+
+### Added
+- `configs/crontab`: the base now schedules the two standard WordPress jobs
+  out of the box, so projects no longer need to add them in
+  `overrides/configs/crontab.d/`:
+  - **wp-cron loopback** — `*/5 * * * * www-data /usr/local/bin/wp-cron.sh`.
+  - **wp-malware-scan** — `17 3 * * * www-data . /etc/cron.d/container-env &&
+    /usr/local/bin/wp-malware-scan.sh`. The job sources the env snapshot
+    written by `entrypoint.sh` so `WP_PATH` + `MALWARE_SCAN_*` are visible;
+    if `MALWARE_SCAN_NOTIFY_EMAIL` is unset the scan logs an error and
+    exits 0 (effective no-op until configured).
+  `overrides/configs/crontab.d/` is now reserved for **custom** per-project
+  jobs only. Existing projects can drop their wp-cron / malware-scan
+  drop-ins after the bump; if they don't, cron simply runs each twice — no
+  breakage, just duplicate invocations.
+
 ## [1.0.3] - 2026-05-27
 
 ### Fixed

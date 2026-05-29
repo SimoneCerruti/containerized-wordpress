@@ -88,9 +88,9 @@ rate limiting, and WordPress IP-based security plugins.
 
 **Where**: `/usr/local/bin/wp-cron.sh`.
 
-**Runs**: scheduled via a per-project `overrides/configs/crontab.d/`
-entry (the base doesn't install it; it's project policy how often to
-trigger).
+**Runs**: scheduled by the base `configs/crontab` every 5 minutes
+(`*/5 * * * * www-data`). Projects no longer need a `crontab.d/` entry
+for the loopback trigger.
 
 **Does**: makes a localhost HTTP call to
 `http://127.0.0.1/wp-cron.php?doing_wp_cron=1` so that WP cron jobs run
@@ -107,8 +107,12 @@ nginx + php-fpm up. `WP_PATH` is implicit (served by nginx as
 
 **Where**: `/usr/local/bin/wp-malware-scan.sh`.
 
-**Runs**: scheduled via a per-project `overrides/configs/crontab.d/`
-entry (typical: nightly).
+**Runs**: scheduled by the base `configs/crontab` nightly at 03:17
+(`17 3 * * * www-data`). The job sources `/etc/cron.d/container-env`
+first so the scan sees `WP_PATH` + `MALWARE_SCAN_*`. If
+`MALWARE_SCAN_NOTIFY_EMAIL` is unset on a given site, the script logs
+an error and exits 0 — effectively a no-op until configured. Projects
+no longer need a `crontab.d/` entry for the scan.
 
 **Does**: a layered scan of the WordPress install, designed to be quiet
 when clean and email an Italian-language report when anything looks off.

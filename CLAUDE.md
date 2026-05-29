@@ -155,10 +155,14 @@ keeps the mechanism dead simple and easy to debug.
    To change a base server-level directive you still need a full `nginx.conf`
    replacement (a different mechanism — not yet implemented).
 
-2. **`crontab` in base is system-only.** Per-project jobs (wp-cron loopback,
-   wp-malware-scan) live in `overrides/configs/crontab.d/` because they're
-   project-specific in scope. The base only has Debian periodic + Cloudflare
-   refresh + heartbeat.
+2. **`crontab` in base ships the standard WP jobs.** Debian periodic +
+   Cloudflare refresh + heartbeat, plus **wp-cron loopback** (`*/5`) and
+   **wp-malware-scan** (`17 3 * * *`, sources `/etc/cron.d/container-env` so
+   `WP_PATH` + `MALWARE_SCAN_*` are visible). Projects no longer need to
+   schedule these in `overrides/configs/crontab.d/` — that directory is now
+   for **custom** per-project jobs only. If `MALWARE_SCAN_NOTIFY_EMAIL` is
+   unset, `wp-malware-scan.sh` exits 0 with a single log line, so the job is
+   effectively a no-op on sites that haven't configured it.
 
 3. **`docker-compose.yml` is per-project; `compose.base.yml` is versioned.**
    The project's `docker-compose.yml` lives at the project root and is

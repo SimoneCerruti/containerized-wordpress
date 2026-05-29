@@ -13,5 +13,11 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 # Heartbeat - last cron run timestamp (lightweight, rotates with logrotate)
 */15 * * * * root date -Iseconds > /var/log/wp_app/cron-heartbeat.log 2>&1
 
-# Per-project cron jobs (wp-cron, malware-scan, custom) are loaded from
-# /etc/cron.d/* via apply-overrides.sh — see overrides/configs/crontab.d/
+# WP Cron - loopback through nginx/php-fpm
+*/5 * * * * www-data /usr/local/bin/wp-cron.sh
+
+# WP Malware Scan - nightly; sources container-env for WP_PATH + MALWARE_SCAN_*
+17 3 * * * www-data . /etc/cron.d/container-env && /usr/local/bin/wp-malware-scan.sh
+
+# Per-project custom cron jobs are loaded from /etc/cron.d/* via
+# apply-overrides.sh — see overrides/configs/crontab.d/
