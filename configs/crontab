@@ -17,7 +17,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 */5 * * * * www-data /usr/local/bin/wp-cron.sh
 
 # WP Malware Scan - nightly; sources container-env for WP_PATH + MALWARE_SCAN_*
-17 3 * * * www-data . /etc/cron.d/container-env && /usr/local/bin/wp-malware-scan.sh
+17 3 * * * www-data /usr/local/bin/wp-malware-scan.sh
 
 # Per-project custom cron jobs are loaded from /etc/cron.d/* via
 # apply-overrides.sh — see overrides/configs/crontab.d/
