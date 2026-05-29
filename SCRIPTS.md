@@ -92,16 +92,22 @@ rate limiting, and WordPress IP-based security plugins.
 (`*/5 * * * * www-data`). Projects no longer need a `crontab.d/` entry
 for the loopback trigger.
 
-**Does**: makes a localhost HTTP call to
-`http://127.0.0.1/wp-cron.php?doing_wp_cron=1` so that WP cron jobs run
-in a real PHP-FPM worker (not a one-off CLI process with no nginx
-context).
+**Does**: runs all due WordPress cron events via WP-CLI
+(`wp cron event run --due-now`) against `/var/www/html`. CLI SAPI means
+no HTTP / php-fpm timeout, so long-running events (e.g. WooCommerce
+action scheduler batches) finish without being cut off. `flock -n` on
+`/tmp/wp-cron.lock` guarantees a single concurrent run — if the previous
+tick is still active, this run is skipped and noted in the log.
 
-**Reads env**: none directly — relies on the running container having
-nginx + php-fpm up. `WP_PATH` is implicit (served by nginx as
-`/var/www/html`).
+Trade-off vs. an HTTP loopback: CLI SAPI has no HTTP request context
+(no `$_SERVER['HTTP_HOST']`, no nginx-set headers). Most plugins are
+fine — but anything that strictly needs an HTTP context will misbehave.
 
-**Logs to**: `/var/log/wp_app/wp-cron.log` (only on curl failure).
+**Reads env**: none directly. The script hardcodes `--path=/var/www/html`
+(the WP install location in this base image).
+
+**Logs to**: `/var/log/wp_app/wp-cron.log` — all WP-CLI output, with
+`PHP Deprecated:` / `PHP Notice:` lines filtered out.
 
 ## wp-malware-scan.sh
 

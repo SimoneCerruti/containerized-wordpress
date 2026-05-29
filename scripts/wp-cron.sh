@@ -1,16 +1,16 @@
 #!/bin/bash
-# Triggers WordPress cron via HTTP loopback through php-fpm
-# Logs invocation and curl exit code for diagnostics
-
+# Runs due WordPress cron events via WP-CLI.
+# CLI SAPI = no HTTP/FPM timeout; flock guarantees a single concurrent run.
 set -uo pipefail
 
-LOG=/var/log/wp_app/wp-cron.log
+readonly log_file="/var/log/wp_app/wp-cron.log"
+readonly lock_file="/tmp/wp-cron.lock"
 
-curl -fsS -m 55 -o /dev/null "http://127.0.0.1/wp-cron.php?doing_wp_cron=1"
-EXIT=$?
-
-if [ $EXIT -ne 0 ]; then
-    echo "[$(date -Iseconds)] curl failed with exit $EXIT" >> "$LOG"
+exec 9>"$lock_file"
+if ! flock -n 9; then
+    echo "[$(date -Iseconds)] previous run still active, skipping" >> "$log_file"
+    exit 0
 fi
 
-exit $EXIT
+wp --path=/var/www/html cron event run --due-now 2>&1 \
+  | { grep -vaE '^(PHP )?(Deprecated|Notice):' || true; } >> "$log_file"
