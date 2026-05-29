@@ -87,6 +87,30 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
+## [1.1.1] - 2026-05-29
+
+### Fixed
+- `wp-malware-scan.sh`: source `/etc/cron.d/container-env` inside the script,
+  **before** the configuration block, instead of on the crontab line. When the
+  source ran after the config block, derived defaults (`MALWARE_SCAN_WHITELIST`,
+  `MALWARE_SCAN_PATH_EXCLUDES`) were computed from the default
+  `MALWARE_SCAN_STATE_DIR` and silently ignored a project-set state dir. The
+  script now also exports a known-good `PATH` so it behaves identically whether
+  invoked by cron or by hand.
+
+### Changed
+- `configs/crontab`: the wp-malware-scan job line is now just
+  `17 3 * * * www-data /usr/local/bin/wp-malware-scan.sh` — the
+  `. /etc/cron.d/container-env &&` prefix moved into the script (see above).
+- `wp-cron.sh`: now sources `/etc/cron.d/container-env` (and exports a
+  known-good `PATH`), so `WP_PATH` is honored instead of the hardcoded
+  `/var/www/html`, matching `wp-malware-scan.sh`. The stderr filter is replaced
+  by a single `awk` pass that splits the merged output: `PHP Deprecated/Notice`
+  lines are appended raw to the WordPress `debug.log` (WP adds its own
+  timestamp), and everything else lands in the cron log with an ISO-8601
+  timestamp. `strftime`/`fflush(name)` are supported by both the image's mawk
+  1.3.4 and gawk, so no awk-variant dependency is introduced.
+
 ## [1.1.0] - 2026-05-29
 
 ### Added
