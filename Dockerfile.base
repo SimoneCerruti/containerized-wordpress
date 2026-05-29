@@ -83,8 +83,9 @@ WORKDIR /var/www/html
 
 RUN usermod -s /bin/bash www-data && \
     echo "export TERM=xterm-256color" >> /etc/bash.bashrc && \
-    echo "alias ls='ls --color=auto'" >> /etc/bash.bashrc && \
+    echo "alias ls='ls -lah --color=auto'" >> /etc/bash.bashrc && \
     echo "alias grep='grep --color=auto'" >> /etc/bash.bashrc && \
+    echo "wp() { command wp \"\$@\" 2> >(grep -vaE '^(PHP )?(Deprecated|Notice|Warning):' >&2); }" >> /etc/bash.bashrc && \
     echo "PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '" >> /etc/bash.bashrc
 
 RUN chown -R www-data:www-data /var/www/html
