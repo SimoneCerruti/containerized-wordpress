@@ -87,7 +87,7 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
-## [Unreleased]
+## [1.1.0] - 2026-05-29
 
 ### Added
 - `configs/crontab`: the base now schedules the two standard WordPress jobs
@@ -103,6 +103,60 @@ Move entries to a versioned section when cutting the release.
   jobs only. Existing projects can drop their wp-cron / malware-scan
   drop-ins after the bump; if they don't, cron simply runs each twice — no
   breakage, just duplicate invocations.
+- `wp-cron.sh`: switched from the curl HTTP loopback (`/wp-cron.php`) to a
+  direct `wp cron event run --due-now` call under the CLI SAPI, guarded by
+  `flock -n /tmp/wp-cron.lock`. Two real improvements: long-running events
+  (WooCommerce Action Scheduler, etc.) are no longer killed by the 55s
+  HTTP/php-fpm timeout, and concurrent ticks are detected and skipped
+  instead of piling up. Trade-off worth knowing: WP-CLI runs cron callbacks
+  without an HTTP request, so plugins that strictly require `$_SERVER
+  ['HTTP_HOST']`, nginx-set headers, or a populated `$_REQUEST` may behave
+  differently — most plugins are unaffected. Restore the previous behavior
+  on a single project by shipping `overrides/scripts/wp-cron.sh` with the
+  curl call. The script's CLI and expected inputs are unchanged, so this
+  stays in the MINOR (additive) lane.
+- `Dockerfile.base`: interactive-shell ergonomics — `alias ls='ls -lah
+  --color=auto'` and a `wp()` wrapper that drops `PHP Deprecated/Notice/
+  Warning` lines from stderr. Cron and non-interactive scripts are
+  unaffected (bashrc is only sourced in interactive shells), so this
+  doesn't change any cron behavior.
+
+### Fixed
+- `cloudflare-ips.sh`: tolerate Cloudflare fetch failures without
+  clobbering an existing config. v4/v6 ranges are fetched into variables
+  first; if either is empty AND a previous
+  `/etc/nginx/conf.d/cloudflare-ips.conf` exists, the old file is kept. If
+  no previous file exists, a valid config is still written with the static
+  Docker network entries — degraded but loadable. Validation (`nginx -t`)
+  is decoupled from reload (`nginx -s reload`): validation must pass, but
+  a failed reload is treated as expected when nginx isn't running yet
+  (build time, first boot). The bootstrap path in `Dockerfile.base` no
+  longer needs its stub fallback in practice.
+- `configs/nginx.conf`: the Cloudflare include is now a glob
+  (`cloudflare-ips*.conf`) so nginx tolerates the file being absent
+  entirely and supports splitting into multiple files later.
+- `entrypoint.sh`: harden the cron env snapshot. Names are sourced from
+  `compgen -v` + indirect expansion (`${!name}`) instead of parsing
+  `printenv` with `IFS='='` (which split incorrectly when a value
+  contained `=` or a stray newline). Explicitly skips
+  `WORDPRESS_CONFIG_EXTRA` (multi-line PHP for wp-config.php injection —
+  unneeded by cron and bloats the sourced env).
+
+### Docs
+- `CLAUDE.md`: **Conventional Commits v1.0.0 is now mandatory** for every
+  commit message in this repo. Subject is
+  `<type>[optional scope][!]: <description>`; allowed types are listed
+  (feat, fix, docs, refactor, perf, test, build, ci, chore, revert) along
+  with common scopes (`crontab`, `entrypoint`, `cloudflare-ips`,
+  `wp-cron`, `wp-malware-scan`, `nginx`, `compose`, `image`, `docs`,
+  `release`). The `!` / `BREAKING CHANGE:` footer is explicitly tied to
+  the consumer-contract breakage definition that drives MAJOR releases in
+  this CHANGELOG.
+- `CLAUDE.md` gotcha #2: updated to reflect that the base crontab now
+  ships wp-cron + wp-malware-scan.
+- `SCRIPTS.md`: `wp-cron.sh` / `wp-malware-scan.sh` "Runs" sections
+  updated; `wp-cron.sh` "Does"/"Reads env"/"Logs to" rewritten for the new
+  WP-CLI approach, with the CLI-SAPI trade-off called out explicitly.
 
 ## [1.0.3] - 2026-05-27
 
