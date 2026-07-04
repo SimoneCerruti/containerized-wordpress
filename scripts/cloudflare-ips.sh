@@ -38,10 +38,20 @@ if ! nginx -t 2>/dev/null; then
   exit 1
 fi
 
-# Reload only if nginx is already running. At container startup it is not up yet,
-# so the reload is skipped (expected) and the file loads on nginx's first start.
-if nginx -s reload 2>/dev/null; then
-  echo "Cloudflare IPs updated and nginx reloaded"
+# Reload only if nginx's master process is actually running. At container
+# startup (and during the image build) nginx is not up yet, so we must skip the
+# reload entirely: invoking `nginx -s reload` with no running master reads the
+# empty/absent pid file and logs `invalid PID number "" in "/run/nginx.pid"`
+# (or `open() ... failed`) to nginx's error_log — the `2>/dev/null` only hides
+# stderr, not what nginx writes to its configured log. Checking the pid file for
+# a live process avoids the signal call (and the bogus error) in that case; the
+# freshly written config loads on nginx's first start instead.
+if [ -s /run/nginx.pid ] && kill -0 "$(cat /run/nginx.pid)" 2>/dev/null; then
+  if nginx -s reload 2>/dev/null; then
+    echo "Cloudflare IPs updated and nginx reloaded"
+  else
+    echo "Cloudflare IPs written but nginx reload failed (config left in place)"
+  fi
 else
   echo "Cloudflare IPs written (nginx not running yet; will load on start)"
 fi

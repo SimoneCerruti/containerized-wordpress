@@ -87,6 +87,20 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- `cloudflare-ips.sh`: only reload nginx when its master process is actually
+  running. Previously the script always ran `nginx -s reload` and relied on it
+  to "fail cleanly" when nginx was down — but at container startup (and during
+  the image build) nginx is not up yet, and `nginx -s reload` with no master
+  logs `invalid PID number "" in "/run/nginx.pid"` to nginx's error_log (the
+  `2>/dev/null` only hid stderr). The script now checks `/run/nginx.pid` for a
+  live process before signalling, eliminating the spurious startup error. The
+  freshly written Cloudflare config still loads on nginx's first start.
+
+---
+
 ## [1.1.1] - 2026-05-29
 
 ### Fixed
