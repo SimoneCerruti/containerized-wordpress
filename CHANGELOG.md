@@ -87,7 +87,7 @@ Move entries to a versioned section when cutting the release.
 
 ---
 
-## [Unreleased]
+## [1.1.2] - 2026-07-04
 
 ### Fixed
 - `cloudflare-ips.sh`: only reload nginx when its master process is actually
