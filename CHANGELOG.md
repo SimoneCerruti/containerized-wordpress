@@ -53,7 +53,7 @@ For each registered project on a host:
 3. **Check logs for regressions.**
    ```bash
    docker compose -f /srv/projects/staging-site/docker-compose.yml \
-     exec wp tail -n 200 /var/log/wp_app/{nginx.error,php-fpm,apply-overrides}.log
+     exec wp tail -n 200 /var/log/wp_app/{nginx.error,php-error,php-fpm,apply-overrides}.log
    ```
 4. **Roll out.** Once staging is clean:
    ```bash
@@ -84,6 +84,19 @@ Each released version has a section like:
 
 Unreleased work goes under an `## [Unreleased]` header at the top.
 Move entries to a versioned section when cutting the release.
+
+---
+
+## [Unreleased]
+
+### Changed
+- `php-fpm-www.conf`: PHP errors from FPM workers are now written to
+  `/var/log/wp_app/php-error.log` (`php_value[error_log]`) instead of reaching
+  `nginx.error.log` as `FastCGI sent in stderr: ...` lines. The file is covered
+  by the existing `/var/log/wp_app/*.log` logrotate rule. `php_value` (not
+  `php_admin_value`) is used on purpose so `WP_DEBUG_LOG` can still redirect
+  errors to `wp-content/debug.log` via `ini_set()`. Anyone watching
+  `nginx.error.log` for PHP errors should switch to `php-error.log`.
 
 ---
 
