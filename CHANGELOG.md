@@ -82,7 +82,7 @@ Each released version has a section like:
 - <change> — migration: <what consumers must do>
 ```
 
-Unreleased work goes under an `## [Unreleased]` header at the top.
+Unreleased work goes under an `## [1.2.0] - 2026-11-02` header at the top.
 Move entries to a versioned section when cutting the release.
 
 ---
